@@ -12,7 +12,6 @@ import CoreData
 class ItemDetailsVC: UIViewController, UIPickerViewDataSource,UIPickerViewDelegate ,UIImagePickerControllerDelegate,UINavigationControllerDelegate {
 
     @IBOutlet weak var pickerViewStore : UIPickerView!
-    @IBOutlet weak var pickerViewtype: UIPickerView!
     @IBOutlet weak var titleField : CustomTextField!
     @IBOutlet weak var priceField : CustomTextField!
     @IBOutlet weak var detailsField : CustomTextField!
@@ -21,6 +20,7 @@ class ItemDetailsVC: UIViewController, UIPickerViewDataSource,UIPickerViewDelega
     var stores = [Store]()
     var itemToEdit : Item?
     var imagePicker : UIImagePickerController!
+    var type = [ItemType]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -35,37 +35,65 @@ class ItemDetailsVC: UIViewController, UIPickerViewDataSource,UIPickerViewDelega
         imagePicker = UIImagePickerController()
         imagePicker.delegate = self
         
-//        let store = Store(context: context)
-//        store.name = "Staples"
-//        let store2 = Store(context: context)
-//        store2.name = "Amazon"
-//        let store3 = Store(context: context)
-//        store3.name = "Costco"
-//        let store4 = Store(context: context)
-//        store4.name = "walmart"
-//        let store5 = Store(context: context)
-//        store5.name = "Flipkart"
-//        let store6 = Store(context: context)
-//        store6.name = "Best Buy"
-//        
-//        ad.saveContext()
-        getStores() // func to get data from store using fetch request 
+        let store = Store(context: context)
+        store.name = "Staples"
+        let store2 = Store(context: context)
+        store2.name = "Amazon"
+        let store3 = Store(context: context)
+        store3.name = "Costco"
+        let store4 = Store(context: context)
+        store4.name = "walmart"
+        let store5 = Store(context: context)
+        store5.name = "Flipkart"
+        let store6 = Store(context: context)
+        store6.name = "Best Buy"
         
+
+        
+        let type = ItemType(context: context)
+        type.type = "Clothing"
+        let type2 = ItemType(context: context)
+        type2.type = "Electrical"
+        let type3 = ItemType(context: context)
+        type3.type = "Shoe"
+        let type4 = ItemType(context: context)
+        type4.type = "Bike"
+        let type5 = ItemType(context: context)
+        type5.type = "Car"
+        
+        ad.saveContext()
+        
+        getStores() // func to get data from store using fetch request 
+        getItemType()
         if itemToEdit != nil {
             loadItemData()
         }
     }
 
     func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        
+        if component == 0 {
+
         return stores.count
+        }
+        else {
+            return type.count
+        }
     }
     func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+       
+        if component == 0 {
         let storeName = stores[row]
         
         return storeName.name
+        }
+        else {
+            let typeName = type[row]
+            return typeName.type
+        }
     }
     func numberOfComponents(in pickerView: UIPickerView) -> Int {
-        return 1
+        return 2
     }
     func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
         
@@ -73,14 +101,24 @@ class ItemDetailsVC: UIViewController, UIPickerViewDataSource,UIPickerViewDelega
 
     func getStores(){
         
-        let fetchRequest : NSFetchRequest<Store> = Store.fetchRequest()
+        let fetchRequestStore : NSFetchRequest<Store> = Store.fetchRequest()
         
         do {
-            self.stores = try context.fetch(fetchRequest)
+            self.stores = try context.fetch(fetchRequestStore)
             self.pickerViewStore.reloadAllComponents()
         } catch let err as NSError{
             print(err)
         }
+    }
+    func getItemType(){
+        
+        let fetchRequestType : NSFetchRequest<ItemType> = ItemType.fetchRequest()
+        do {
+            self.type = try context.fetch(fetchRequestType)
+        } catch let err as NSError {
+            print(err)
+        }
+        
     }
     
     @IBAction func saveBtnPressed(_ sender: UIButton) {
@@ -110,6 +148,8 @@ class ItemDetailsVC: UIViewController, UIPickerViewDataSource,UIPickerViewDelega
             item.details = details
         }
         
+        item.toitemtype = type[pickerViewStore.selectedRow(inComponent: 1)]
+        
         item.tostore = stores[pickerViewStore.selectedRow(inComponent: 0)]
         ad.saveContext()
         navigationController?.popViewController(animated: true)
@@ -123,6 +163,21 @@ class ItemDetailsVC: UIViewController, UIPickerViewDataSource,UIPickerViewDelega
             priceField.text = "\(item.price)"
             detailsField.text = item.details
             thumbImg.image = item.toimage?.image as? UIImage
+            
+            
+            if let types = item.toitemtype {
+                
+                var i = 0
+                
+                repeat {
+                    let t = type[i]
+                    if t.type == types.type {
+                        pickerViewStore.selectRow(i, inComponent: 1, animated: false)
+                    }
+                    i += 1
+                }while ( i < type.count )
+            }
+               
             
             if let store = item.tostore {
                 
@@ -140,6 +195,7 @@ class ItemDetailsVC: UIViewController, UIPickerViewDataSource,UIPickerViewDelega
             }
         }
     }
+    
     @IBAction func trashBtnPressed(_ sender: UIBarButtonItem) {
         
         if itemToEdit != nil {
